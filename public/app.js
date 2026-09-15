@@ -102,3 +102,33 @@ async function toggleRele(num, estado) {
     console.error("Error al cambiar relé", err);
   }
 }
+
+async function apagarDispositivo() {
+  if (!window.confirm('¿Quieres apagar los tres relés?')) return;
+
+  const shutdownButton = document.querySelector('.shutdown-button');
+  shutdownButton.disabled = true;
+
+  try {
+    if (csrfToken === null) await cargarTokenWeb();
+
+    const res = await fetch(`${API_BASE}control-reles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ rele_1: 0, rele_2: 0, rele_3: 0 })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    setReleUI(1, 0);
+    setReleUI(2, 0);
+    setReleUI(3, 0);
+  } catch (err) {
+    console.error('Error al apagar el dispositivo', err);
+    window.alert('No se pudo apagar el dispositivo. Intenta nuevamente.');
+  } finally {
+    shutdownButton.disabled = false;
+  }
+}
