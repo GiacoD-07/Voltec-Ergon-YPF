@@ -7,6 +7,12 @@ CREATE TABLE IF NOT EXISTS historial_consumo (
   potencia_activa DECIMAL(10, 2) NOT NULL,
   energia_total_kwh DECIMAL(12, 4) NOT NULL,
   consumo_fantasma TINYINT(1) NOT NULL DEFAULT 0,
+  corriente_rele_1 DECIMAL(10, 3) NULL,
+  potencia_rele_1 DECIMAL(10, 2) NULL,
+  corriente_rele_2 DECIMAL(10, 3) NULL,
+  potencia_rele_2 DECIMAL(10, 2) NULL,
+  corriente_rele_3 DECIMAL(10, 3) NULL,
+  potencia_rele_3 DECIMAL(10, 2) NULL,
   fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_historial_dispositivo_fecha (dispositivo_id, fecha_registro)
 ) ENGINE=InnoDB;

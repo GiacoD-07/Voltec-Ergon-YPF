@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS `historial_consumo` (
   `potencia_activa` FLOAT NOT NULL,
   `energia_total_kwh` FLOAT NOT NULL,
   `consumo_fantasma` TINYINT(1) DEFAULT 0,
+  `corriente_rele_1` FLOAT NULL,
+  `potencia_rele_1` FLOAT NULL,
+  `corriente_rele_2` FLOAT NULL,
+  `potencia_rele_2` FLOAT NULL,
+  `corriente_rele_3` FLOAT NULL,
+  `potencia_rele_3` FLOAT NULL,
   `fecha_registro` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

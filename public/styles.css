@@ -351,6 +351,19 @@ body.bg-main {
 
 .relay-status.is-on { color: var(--electric); font-weight: 600; }
 
+.relay-measurements {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+  color: var(--text-mid);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.relay-measurements span + span { border-left: 1px solid var(--panel-border-strong); padding-left: 0.55rem; }
+.relay-measurements .is-unavailable { color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
+
 .manual-shutdown {
   display: flex;
   align-items: center;

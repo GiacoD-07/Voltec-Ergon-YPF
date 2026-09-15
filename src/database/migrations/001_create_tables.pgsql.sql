@@ -7,6 +7,12 @@ CREATE TABLE IF NOT EXISTS historial_consumo (
   potencia_activa NUMERIC(10, 2) NOT NULL,
   energia_total_kwh NUMERIC(12, 4) NOT NULL,
   consumo_fantasma SMALLINT NOT NULL DEFAULT 0,
+  corriente_rele_1 NUMERIC(10, 3),
+  potencia_rele_1 NUMERIC(10, 2),
+  corriente_rele_2 NUMERIC(10, 3),
+  potencia_rele_2 NUMERIC(10, 2),
+  corriente_rele_3 NUMERIC(10, 3),
+  potencia_rele_3 NUMERIC(10, 2),
   fecha_registro TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

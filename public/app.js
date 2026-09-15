@@ -24,6 +24,9 @@ async function actualizarMetricas() {
     document.getElementById('val-voltaje').textContent = Math.round(data.voltaje || 220);
     document.getElementById('val-corriente').textContent = parseFloat(data.corriente || 0).toFixed(2);
     document.getElementById('val-energia').textContent = parseFloat(data.energia_total_kwh || 0).toFixed(2);
+    setReleMeasurementUI(1, data.corriente_rele_1, data.potencia_rele_1);
+    setReleMeasurementUI(2, data.corriente_rele_2, data.potencia_rele_2);
+    setReleMeasurementUI(3, data.corriente_rele_3, data.potencia_rele_3);
 
     const banner = document.getElementById('banner-fantasma');
     if (data.consumo_fantasma == 1) {
@@ -77,6 +80,18 @@ function setReleUI(num, estado) {
   switchEl.checked = isChecked;
   labelEl.textContent = isChecked ? 'Encendido' : 'Desconectado';
   labelEl.className = isChecked ? 'relay-status is-on' : 'relay-status';
+}
+
+function setReleMeasurementUI(num, corriente, potencia) {
+  const currentEl = document.getElementById(`current-rele-${num}`);
+  const powerEl = document.getElementById(`power-rele-${num}`);
+  const hasMeasurement = corriente !== null && corriente !== undefined
+    && potencia !== null && potencia !== undefined;
+
+  currentEl.textContent = hasMeasurement ? `${Number(corriente).toFixed(2)} A` : 'Sin sensor';
+  powerEl.textContent = hasMeasurement ? `${Number(potencia).toFixed(1)} W` : 'Sin sensor';
+  currentEl.classList.toggle('is-unavailable', !hasMeasurement);
+  powerEl.classList.toggle('is-unavailable', !hasMeasurement);
 }
 
 async function toggleRele(num, estado) {
