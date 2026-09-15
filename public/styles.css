@@ -163,6 +163,44 @@ body.bg-main {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ---------- Carbon footprint ---------- */
+.carbon-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.25rem;
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(105deg, rgba(52, 211, 153, 0.09), rgba(16, 24, 38, 0.55));
+}
+
+.carbon-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--ok);
+  font-size: 1.1rem;
+}
+
+.carbon-value {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--ok);
+  font-size: 1.55rem;
+  font-weight: 600;
+}
+
+.carbon-value .unit { font-size: 0.82rem; }
+.carbon-note, .carbon-source { color: var(--text-mid); font-size: 0.7rem; }
+.carbon-source { margin-left: auto; text-align: right; }
+
+@media (max-width: 480px) {
+  .carbon-panel { align-items: flex-start; flex-wrap: wrap; }
+  .carbon-source { flex-basis: 100%; margin-left: 3.1rem; text-align: left; }
+}
+
 /* ---------- Hero panel ---------- */
 .hero-panel {
   padding: 1.75rem 2rem;

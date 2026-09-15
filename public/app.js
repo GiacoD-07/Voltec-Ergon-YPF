@@ -24,6 +24,8 @@ async function actualizarMetricas() {
     document.getElementById('val-voltaje').textContent = Math.round(data.voltaje || 220);
     document.getElementById('val-corriente').textContent = parseFloat(data.corriente || 0).toFixed(2);
     document.getElementById('val-energia').textContent = parseFloat(data.energia_total_kwh || 0).toFixed(2);
+    document.getElementById('val-co2').textContent = parseFloat(data.huella_carbono_kg || 0).toFixed(3);
+    document.getElementById('co2-factor').textContent = `Factor: ${parseFloat(data.factor_emision_co2_kg_kwh || 0.39).toFixed(2)} kg/kWh`;
 
     const banner = document.getElementById('banner-fantasma');
     if (data.consumo_fantasma == 1) {

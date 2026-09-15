@@ -21,13 +21,26 @@ final class LecturaService
     /** Devuelve datos con valores iniciales cuando todavía no existen lecturas. */
     public function obtenerUltima(): array
     {
-        return $this->repository->obtenerUltima() ?? [
+        $lectura = $this->repository->obtenerUltima() ?? [
             'voltaje' => 220.0,
             'corriente' => 0.0,
             'potencia_activa' => 0.0,
             'energia_total_kwh' => 0.0,
             'consumo_fantasma' => 0,
         ];
+
+        $factorEmision = (float) ($_ENV['CO2_EMISSION_FACTOR_KG_PER_KWH'] ?? 0.39);
+        if ($factorEmision < 0) {
+            $factorEmision = 0.39;
+        }
+
+        $lectura['factor_emision_co2_kg_kwh'] = $factorEmision;
+        $lectura['huella_carbono_kg'] = round(
+            max(0.0, (float) $lectura['energia_total_kwh']) * $factorEmision,
+            3
+        );
+
+        return $lectura;
     }
 
     /** Valida, construye, persiste y replica una lectura. */

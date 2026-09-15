@@ -117,6 +117,20 @@ Colocá tus archivos `.sql` en `src/database/migrations/` y ejecuta:
 composer migrate
 ```
 
+## Huella de carbono
+
+El dashboard calcula la huella acumulada con la fórmula:
+
+```text
+kg CO2e = energia_total_kwh × CO2_EMISSION_FACTOR_KG_PER_KWH
+```
+
+El factor predeterminado es `0.39 kg CO2e/kWh`, tomado como referencia para
+Argentina. Se puede ajustar en `.env` si se dispone de un factor actualizado
+del proveedor eléctrico o de una fuente oficial. El resultado es una
+estimación de emisiones asociadas al consumo de electricidad, no una medición
+directa de gases.
+
 ## Servidor local de desarrollo
 
 Para probar la aplicación en la misma computadora, ejecutá:
