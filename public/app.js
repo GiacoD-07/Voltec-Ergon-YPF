@@ -1,4 +1,10 @@
+// Responsabilidad: actualizar la interfaz, consultar la API y enviar órdenes de relés.
+const API_BASE = new URL('api/', document.baseURI).toString();
+let csrfToken = null;
+
+// Inicializa datos y comienza las actualizaciones periódicas del panel.
 document.addEventListener('DOMContentLoaded', () => {
+  cargarTokenWeb();
   actualizarMetricas();
   actualizarReles();
 
@@ -9,7 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function actualizarMetricas() {
   try {
-    const res = await fetch('/api/lectura');
+    // Obtiene la última medición y actualiza los indicadores principales.
+    const res = await fetch(`${API_BASE}lectura`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     document.getElementById('val-potencia').textContent = parseFloat(data.potencia_activa || 0).toFixed(1);
@@ -25,15 +33,20 @@ async function actualizarMetricas() {
       banner.classList.add('d-none');
       banner.classList.remove('d-flex');
     }
+
+    document.getElementById('txt-status').textContent = 'EN LÍNEA';
+    document.getElementById('txt-status').className = 'status-text text-success';
   } catch (err) {
     document.getElementById('txt-status').textContent = 'OFFLINE';
-    document.getElementById('txt-status').className = 'small fw-semibold text-danger';
+    document.getElementById('txt-status').className = 'status-text text-danger';
   }
 }
 
 async function actualizarReles() {
   try {
-    const res = await fetch('/api/control-reles');
+    // Sincroniza la posición de los interruptores con el estado guardado en la API.
+    const res = await fetch(`${API_BASE}control-reles`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     if (data.reles) {
@@ -46,28 +59,46 @@ async function actualizarReles() {
   }
 }
 
+async function cargarTokenWeb() {
+  // Solicita un token temporal que se enviará en las operaciones de escritura.
+  const res = await fetch(`${API_BASE}web-token`, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const data = await res.json();
+  csrfToken = data.token;
+}
+
 function setReleUI(num, estado) {
+  // Refleja un estado recibido del servidor en el interruptor correspondiente.
   const switchEl = document.getElementById(`switch-rele-${num}`);
   const labelEl = document.getElementById(`label-rele-${num}`);
   const isChecked = estado == 1;
 
   switchEl.checked = isChecked;
   labelEl.textContent = isChecked ? 'Encendido' : 'Desconectado';
-  labelEl.className = isChecked ? 'small text-info fw-semibold' : 'small text-muted-custom';
+  labelEl.className = isChecked ? 'relay-status is-on' : 'relay-status';
 }
 
 async function toggleRele(num, estado) {
+  // Envía el cambio y revierte la interfaz si el servidor lo rechaza.
   const bodyData = {};
   bodyData[`rele_${num}`] = estado ? 1 : 0;
 
   try {
-    await fetch('/api/control-reles', {
+    if (csrfToken === null) await cargarTokenWeb();
+
+    const res = await fetch(`${API_BASE}control-reles`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
       body: JSON.stringify(bodyData)
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     setReleUI(num, estado ? 1 : 0);
   } catch (err) {
+    setReleUI(num, estado ? 0 : 1);
     console.error("Error al cambiar relé", err);
   }
 }

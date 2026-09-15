@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+// Responsabilidad: detectar y aplicar las migraciones SQL pendientes de la base de datos.
+
 use Dotenv\Dotenv;
+use App\Database\Database;
 
 $projectRoot = dirname(__DIR__);
 
 require $projectRoot . '/vendor/autoload.php';
 
+// Carga las credenciales necesarias para conectar con la base de datos.
 Dotenv::createImmutable($projectRoot)->safeLoad();
 
 require_once $projectRoot . '/src/database/database.php';
@@ -44,7 +48,10 @@ final class SqlMigrationRunner
     $pdo = $this->database->getConnection();
     $this->ensureMigrationTable($pdo);
 
-    $migrations = $this->loadMigrations($migrationDirectory);
+    $migrations = $this->loadMigrations(
+      $migrationDirectory,
+      (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME)
+    );
 
     if ($migrations === []) {
       fwrite(STDOUT, "No se encontraron archivos .sql para aplicar.\n");
@@ -103,7 +110,7 @@ final class SqlMigrationRunner
   /**
    * @return array<int, array{filename: string, path: string}>
    */
-  private function loadMigrations(string $migrationDirectory): array
+  private function loadMigrations(string $migrationDirectory, string $driver): array
   {
     $files = glob($migrationDirectory . '/*.sql');
 
@@ -120,8 +127,14 @@ final class SqlMigrationRunner
         continue;
       }
 
+      $filename = basename($filePath);
+      $isPostgresMigration = str_ends_with($filename, '.pgsql.sql');
+      if (($driver === 'pgsql') !== $isPostgresMigration) {
+        continue;
+      }
+
       $migrations[] = [
-        'filename' => basename($filePath),
+        'filename' => $filename,
         'path' => $filePath,
       ];
     }

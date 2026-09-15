@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'pdi-eest4/slim-template-2026',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'a7a55def244c4b47b789a1c41d607613d7920c41',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -38,9 +38,9 @@
             'dev_requirement' => false,
         ),
         'pdi-eest4/slim-template-2026' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'a7a55def244c4b47b789a1c41d607613d7920c41',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
