@@ -1,0 +1,1146 @@
+📚 Backlog Definitivo para GitHub Issues — EcoSmartGrid (Voltec Ergon)
+⚡ ÉPICA 1: Firmware & Hardware IoT (firmware/ - ESP32 / PlatformIO)
+US-01: [FW-01] Captura de Variables Eléctricas mediante PZEM-004T
+Narrativa de Usuario
+
+Como firmware del microcontrolador ESP32
+
+Quiero leer las magnitudes eléctricas (voltaje, corriente, potencia activa, energía y frecuencia) desde el sensor PZEM-004T vía UART Modbus
+
+Para disponer de telemetría de consumo eléctrico precisa en tiempo real
+
+Descripción / Contexto
+
+Implementación del driver de comunicación serie RX/TX en el entorno PlatformIO (platformio.ini) utilizando la librería PZEM004Tv30.
+
+Criterios de Aceptación
+Escenario: Lectura correcta de magnitudes eléctricas
+
+Dado que el sensor PZEM-004T está conectado al puerto serie secundario del ESP32 y energizado con 220V AC
+
+Cuando el ciclo principal loop() ejecuta la función de muestreo
+
+Entonces el sistema obtiene los valores de Voltaje (V), Corriente (A), Potencia (W) y Energía (kWh)
+
+Y almacena los datos en la estructura en memoria local
+
+Escenario: Fallo de lectura por desconexión o ruido en la línea UART
+
+Dado que la línea de datos RX/TX del sensor sufre una desconexión física
+
+Cuando la función de muestreo intenta realizar la petición de datos
+
+Entonces el sistema debe mostrar el mensaje de error: "Error de lectura en sensor PZEM-004T: Modbus Timeout"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: El refresco de lectura debe realizarse a intervalos no inferiores a 1 segundo.
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Archivo platformio.ini y firmware/main.cpp.
+
+US-02: [FW-02] Conmutación Física y Protección de Relés de Potencia
+Narrativa de Usuario
+
+Como sistema de control de hardware
+
+Quiero accionar pines digitales de salida para activar o desactivar módulos de relés de 220V
+
+Para cortar o restablecer el flujo eléctrico de las cargas conectadas de forma segura
+
+Descripción / Contexto
+
+Mapeo de pines GPIO del ESP32 configurados como OUTPUT para la conmutación de relés optoacoplados de estado sólido o electromecánicos.
+
+Criterios de Aceptación
+Escenario: Conmutación exitosa de estado de relé
+
+Dado que un pin GPIO está configurado como salida digital
+
+Cuando el microcontrolador recibe una orden de cambio de estado (HIGH/LOW)
+
+Entonces la bobina o circuito del relé conmuta su posición física
+
+Y se actualiza la variable de estado local del canal
+
+Escenario: Protección ante reinicio involuntario del microcontrolador
+
+Dado que el ESP32 se reinicia por caída de tensión
+
+Cuando el sistema ejecuta la rutina de arranque setup()
+
+Entonces el sistema debe mantener el último estado de conmutación guardado en memoria no volátil
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Aislar ópticamente la etapa de baja potencia (3.3V) de la red de 220V AC.
+
+Dependencias con otras historias de usuario: US-01.
+
+Referencias a documentación externa: Esquema de conexiones del circuito impreso.
+
+US-03: [FW-03] Visualización Local en Pantalla OLED I2C
+Narrativa de Usuario
+
+Como usuario presente frente al equipo físico
+
+Quiero observar las métricas instantáneas y el estado de red en una pantalla OLED I2C
+
+Para auditar el consumo localmente sin necesidad de abrir la aplicación web
+
+Descripción / Contexto
+
+Integración de un display OLED SSD1306 (128x64) mediante bus I2C (SDA/SCL) para mostrar diagnósticos locales.
+
+Criterios de Aceptación
+Escenario: Renderizado de datos en pantalla
+
+Dado que la pantalla OLED está inicializada en el bus I2C
+
+Cuando se procesa una nueva lectura del sensor
+
+Entonces el display muestra la potencia en Watts, el acumulado en kWh y la dirección IP asignada
+
+Escenario: Pérdida de comunicación en el bus I2C
+
+Dado que la pantalla se desconecta del bus I2C
+
+Cuando el microcontrolador intenta refrescar la pantalla
+
+Entonces el sistema debe mostrar el mensaje de error: "Error I2C: Pantalla OLED no detectada" en el monitor serie
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Limitar el refresco gráfico para evitar demoras bloqueantes en la ejecución.
+
+Dependencias con otras historias de usuario: US-01.
+
+Referencias a documentación externa: Librería Adafruit_SSD1306 en platformio.ini.
+
+US-04: [FW-04] Portal de Configuración Wi-Fi Dinámica (Wi-Fi Manager)
+Narrativa de Usuario
+
+Como técnico de instalación
+
+Quiero disponer de un portal cautivo web al encender el equipo por primera vez
+
+Para ingresar las credenciales de la red Wi-Fi escolar o doméstica sin recompilar el código
+
+Descripción / Contexto
+
+Implementación de la librería WiFiManager para que el ESP32 cree un Access Point propio cuando no detecta redes conocidas.
+
+Criterios de Aceptación
+Escenario: Conexión exitosa a una nueva red Wi-Fi
+
+Dado que el ESP32 no encuentra redes guardadas en su memoria
+
+Cuando crea el AP "EcoSmartGrid_Config" y el usuario ingresa SSID y clave
+
+Entonces el equipo guarda las credenciales en NVS y se conecta a la red Wi-Fi
+
+Escenario: Ingreso de contraseña incorrecta
+
+Dado que el usuario ingresa una clave de Wi-Fi errónea en el portal cautivo
+
+Cuando el ESP32 intenta asociarse a la red
+
+Entonces el sistema debe mostrar el mensaje de error: "Fallo de autenticación Wi-Fi, intente nuevamente"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Tiempo de expiración del portal cautivo (timeout) fijado en 180 segundos.
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Configuración de red en firmware/.
+
+US-05: [FW-05] Contingencia y Almacenamiento Local en Flash (SPIFFS/EEPROM)
+Narrativa de Usuario
+
+Como sistema de telemetría IoT
+
+Quiero guardar los registros de consumo en la memoria Flash interna del ESP32 cuando se pierda la red
+
+Para garantizar que no se pierda información durante microcortes de internet
+
+Descripción / Contexto
+
+Implementación de un búfer circular en el sistema de archivos SPIFFS o EEPROM interna para almacenar hasta 500 registros fuera de línea.
+
+Criterios de Aceptación
+Escenario: Guardado local ante desconexión
+
+Dado que el ESP32 pierde la conexión Wi-Fi con el servidor backend
+
+Cuando el sensor genera una nueva lectura de potencia
+
+Entonces el sistema empaqueta la lectura y la escribe en el archivo local de contingencia
+
+Escenario: Memoria Flash llena
+
+Dado que la memoria SPIFFS alcanza el límite de almacenamiento asignado
+
+Cuando se intenta guardar un nuevo registro
+
+Entonces el sistema debe sobreescribir el registro más antiguo (FIFO)
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Evitar desgaste prematuro de la memoria Flash optimizando la frecuencia de escritura.
+
+Dependencias con otras historias de usuario: US-01, US-04.
+
+Referencias a documentación externa: Sistema de archivos LittleFS / SPIFFS en PlatformIO.
+
+US-06: [FW-06] Sincronización en Ráfaga (Bulk Upload) Post-Reconexión
+Narrativa de Usuario
+
+Como backend del sistema
+
+Quiero recibir en un único paquete los registros acumulados en la memoria Flash cuando se restablezca la red
+
+Para recomponer el histórico de consumo sin saltos temporales
+
+Descripción / Contexto
+
+Rutina de vaciado diferido que lee el archivo de contingencia y envía una petición HTTP POST masiva hacia el endpoint de sincronización.
+
+Criterios de Aceptación
+Escenario: Vaciado exitoso de datos retenidos
+
+Dado que la conexión Wi-Fi se ha restablecido y existen registros pendientes en SPIFFS
+
+Cuando la tarea de fondo de sincronización se activa
+
+Entonces el ESP32 transmite el arreglo JSON con las lecturas retenidas al servidor
+
+Y elimina el archivo de contingencia local tras recibir HTTP 200 OK
+
+Escenario: Interrupción del envío durante la ráfaga
+
+Dado que la red vuelve a caer en medio de la transferencia masiva
+
+Cuando falla la petición HTTP POST
+
+Entonces el sistema conserva los datos en la memoria Flash para reintentar en el siguiente ciclo
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Fragmentar el envío en paquetes de máximo 50 registros por petición.
+
+Dependencias con otras historias de usuario: US-04, US-05.
+
+Referencias a documentación externa: Archivo firmware/main.cpp.
+
+🏛️ ÉPICA 2: Backend REST & Capas N-Tier (Slim 4 / PHP)
+US-07: [API-01] Enrutamiento Centralizado REST en src/routes/api.php
+Narrativa de Usuario
+
+Como arquitectura de software backend
+
+Quiero definir todas las rutas de la API en un único archivo de enrutamiento Slim 4
+
+Para mantener una separación limpia entre las URLs públicas y los controladores ejecutables
+
+Descripción / Contexto
+
+Configuración del enrutador de Slim 4 en src/routes/api.php vinculando verbos HTTP (GET, POST, PUT) con sus respectivos métodos de controlador.
+
+Criterios de Aceptación
+Escenario: Derivación correcta de ruta solicitada
+
+Dado que el cliente realiza una petición POST /api/mediciones
+
+Cuando el enrutador de Slim 4 analiza la URL
+
+Entonces deriva la ejecución a LecturaController::class . ':registrar'
+
+Escenario: Solicitud a un endpoint no definido
+
+Dado que un usuario intenta acceder a la ruta /api/ruta-inexistente
+
+Cuando el enrutador no encuentra coincidencia
+
+Entonces el sistema debe mostrar el mensaje de error en JSON: "Error 404: Endpoint no encontrado"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Adherirse a las convenciones de nombres del estándar PSR-7 y PSR-15.
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Archivo src/routes/api.php.
+
+US-08: [API-02] Autenticación de Hardware con ApiKeyMiddleware.php
+Narrativa de Usuario
+
+Como administrador de seguridad del sistema
+
+Quiero interceptar todas las peticiones entrantes desde el hardware mediante un Middleware de API Key
+
+Para impedir que terceros inyecten falsas lecturas de consumo en la base de datos
+
+Descripción / Contexto
+
+Capa intermedia ubicada en src/Middleware/ApiKeyMiddleware.php que inspecciona la cabecera HTTP X-API-KEY.
+
+Criterios de Aceptación
+Escenario: Acceso permitido con credencial válida
+
+Dado que la petición HTTP contiene la cabecera X-API-KEY con un token coincidente con el valor del .env
+
+Cuando la solicitud pasa por ApiKeyMiddleware
+
+Entonces se autoriza la ejecución hacia el controlador final
+
+Escenario: Bloqueo de acceso por cabecera ausente o incorrecta
+
+Dado que la petición no incluye la cabecera de autenticación
+
+Cuando el middleware evalúa la solicitud
+
+Entonces el sistema debe mostrar el mensaje de error: "Acceso no autorizado: API Key no válida o ausente" con código HTTP 401
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Las claves deben leerse desde variables de entorno no subidas al repositorio (.env).
+
+Dependencias con otras historias de usuario: US-07.
+
+Referencias a documentación externa: Archivo src/Middleware/ApiKeyMiddleware.php.
+
+US-09: [API-03] Sanitización y Parseo JSON en JsonBodyParserMiddleware.php
+Narrativa de Usuario
+
+Como controlador de la API REST
+
+Quiero que el cuerpo de las solicitudes HTTP sea procesado y convertido automáticamente en arrays PHP
+
+Para manipular los datos de entrada de forma segura sin código duplicado de decodificación
+
+Descripción / Contexto
+
+Middleware que intercepta las peticiones de tipo application/json y ejecuta json_decode limpiando caracteres extraños.
+
+Criterios de Aceptación
+Escenario: Conversión exitosa de cuerpo JSON
+
+Dado que el cliente envía un cuerpo con formato JSON válido
+
+Cuando la petición atraviesa JsonBodyParserMiddleware
+
+Entonces asigna los datos parseados al objeto ServerRequestInterface de Slim 4
+
+Escenario: Intento de envío de JSON malformado
+
+Dado que la petición contiene errores de sintaxis JSON
+
+Cuando el middleware intenta realizar el parseo
+
+Entonces el sistema debe mostrar el mensaje de error: "Formato JSON inválido en el cuerpo de la solicitud" con código HTTP 400
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Prevenir ataques de inyección mediante la sanitización previa de tipos de texto.
+
+Dependencias con otras historias de usuario: US-07.
+
+Referencias a documentación externa: Módulo src/Middleware/.
+
+US-10: [API-04] Recepción y Validación HTTP en LecturaController.php
+Narrativa de Usuario
+
+Como capa de presentación del backend
+
+Quiero recibir los parámetros de telemetría en LecturaController.php y validar sus rangos de valores
+
+Para asegurar que solo se procesen datos numéricos coherentes antes de invocar a la lógica de negocio
+
+Descripción / Contexto
+
+Controlador src/controllers/LecturaController.php encargado de manejar las respuestas HTTP Request y Response.
+
+Criterios de Aceptación
+Escenario: Validación HTTP de payload completo
+
+Dado que la solicitud contiene voltaje, corriente y potencia con tipos de datos correctos
+
+Cuando LecturaController procesa el Request
+
+Entonces delega la ejecución a LecturaService y responde con un cuerpo JSON de éxito
+
+Escenario: Parámetros obligatorios faltantes
+
+Dado que el payload carece del campo potencia
+
+Cuando el controlador ejecuta la validación de presencia
+
+Entonces el sistema debe mostrar el mensaje de error: "El campo 'potencia' es obligatorio" con código HTTP 422
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: El controlador no debe contener sentencias SQL ni reglas financieras (SRP).
+
+Dependencias con otras historias de usuario: US-07, US-09.
+
+Referencias a documentación externa: Archivo src/controllers/LecturaController.php.
+
+US-11: [API-05] Procesamiento HTTP para Control de Conmutación en ReleController.php
+Narrativa de Usuario
+
+Como administrador del Dashboard
+
+Quiero enviar órdenes de encendido o apagado a través de ReleController.php
+
+Para modificar el estado lógico de los actuadores de la instalación
+
+Descripción / Contexto
+
+Controlador src/controllers/ReleController.php que gestiona las peticiones de cambio de estado de relés.
+
+Criterios de Aceptación
+Escenario: Recepción de orden de conmutación válida
+
+Dado que se recibe una petición POST /api/reles/cambiar con el ID del relé y el estado deseado (true/false)
+
+Cuando ReleController valida la solicitud
+
+Entonces invoca a ReleService para actualizar el registro y retorna el nuevo estado en JSON
+
+Escenario: Estado de conmutación no booleano
+
+Dado que el valor enviado para el estado del relé no es un booleano válido
+
+Cuando el controlador procesa el parámetro
+
+Entonces el sistema debe mostrar el mensaje de error: "El estado del relé debe ser booleano (true/false)"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Responder en menos de 200 ms para mantener fluida la experiencia del usuario en la web.
+
+Dependencias con otras historias de usuario: US-07.
+
+Referencias a documentación externa: Archivo src/controllers/ReleController.php.
+
+US-12: [API-06] Abstracción de Persistencia MySQL en LecturaRepository.php
+Narrativa de Usuario
+
+Como capa de acceso a datos
+
+Quiero ejecutar consultas SQL preparadas con PDO dentro de LecturaRepository.php
+
+Para guardar y leer los datos de mediciones en la base de datos MySQL de forma segura contra inyecciones SQL
+
+Descripción / Contexto
+
+Clase src/persistence/LecturaRepository.php conectada mediante Connection.php (src/database/).
+
+Criterios de Aceptación
+Escenario: Inserción de lectura en tabla MySQL
+
+Dado que LecturaRepository recibe un objeto de dominio Lectura
+
+Cuando ejecuta la sentencia INSERT INTO lecturas usando marcadores PDO
+
+Entonces la base de datos MySQL almacena la fila y retorna el ID autogenerado
+
+Escenario: Pérdida de conexión con el servidor MySQL
+
+Dado que el servicio MySQL está detenido o inalcanzable
+
+Cuando el repositorio intenta abrir la conexión PDO
+
+Entonces el sistema debe capturar la excepción y lanzar un mensaje de error: "Error de base de datos: No se pudo establecer la conexión PDO"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Usar exclusivamente sentencias preparadas (PDO::prepare).
+
+Dependencias con otras historias de usuario: US-14.
+
+Referencias a documentación externa: Archivos src/persistence/LecturaRepository.php y src/database/Connection.php.
+
+US-13: [API-07] Gestión de Persistencia de Relés en ReleRepository.php
+Narrativa de Usuario
+
+Como base de datos del sistema
+
+Quiero mantener una tabla estado_reles gestionada por ReleRepository.php
+
+Para consultar el último estado de conmutación asignado a cada canal
+
+Descripción / Contexto
+
+Repositorio src/persistence/ReleRepository.php para ejecutar sentencias UPDATE y SELECT sobre el estado de los actuadores.
+
+Criterios de Aceptación
+Escenario: Actualización de estado de relé en MySQL
+
+Dado que se requiere modificar el estado del relé con ID 1
+
+Cuando ReleRepository ejecuta el UPDATE estado_reles SET activo = :estado WHERE id = :id
+
+Entonces la fila correspondiente en la base de datos se actualiza
+
+Escenario: Consulta de estado de relé inexistente
+
+Dado que se consulta un ID de relé no registrado en la base de datos
+
+Cuando el repositorio ejecuta el SELECT
+
+Entonces el sistema debe retornar null permitiendo al servicio manejar la ausencia
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Mantener un índice en la columna id_dispositivo para agilizar las búsquedas.
+
+Dependencias con otras historias de usuario: US-12.
+
+Referencias a documentación externa: Archivo src/persistence/ReleRepository.php.
+
+US-14: [API-08] Mapeo de Entidades en Lectura.php y EstadoReles.php
+Narrativa de Usuario
+
+Como arquitectura de software
+
+Quiero definir clases de entidad pura en src/models/
+
+Para encapsular las propiedades y atributos del dominio con sus respectivos Getters y Setters
+
+Descripción / Contexto
+
+Clases de modelo de datos src/models/Lectura.php y src/models/EstadoReles.php.
+
+Criterios de Aceptación
+Escenario: Instanciación e hidratación de objeto Lectura
+
+Dado que se obtienen valores numéricos desde la base de datos o API
+
+Cuando se instancia la clase Lectura
+
+Entonces el objeto expone los métodos getVoltaje(), getCorriente(), getPotencia() y getFecha()
+
+Escenario: Serialización a formato JSON
+
+Dado que un objeto de modelo debe ser retornado en una respuesta HTTP
+
+Cuando se aplica json_encode sobre la entidad
+
+Entonces se genera la estructura JSON con los nombres de atributos estándar
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Las clases de modelo no contienen lógica de persistencia ni validación HTTP (SRP).
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Archivos en src/models/.
+
+🖥️ ÉPICA 3: Dashboard Web, PWA & UX (public/)
+US-15: [UI-01] Interfaz Responsiva de Monitoreo en Tiempo Real
+Narrativa de Usuario
+
+Como usuario del sistema EcoSmartGrid
+
+Quiero visualizar un panel web responsivo estructurado en index.html y styles.css
+
+Para consultar las métricas de consumo en tiempo real adaptadas a pantallas de celulares, tablets o PCs
+
+Descripción / Contexto
+
+Diseño y maquetación de la interfaz de usuario alojada en public/index.html y public/styles.css.
+
+Criterios de Aceptación
+Escenario: Renderizado responsivo de la interfaz web
+
+Dado que el usuario ingresa a la aplicación web desde un dispositivo móvil o de escritorio
+
+Cuando el navegador carga index.html
+
+Entonces la cuadrícula de tarjetas de métricas se adapta automáticamente al ancho de pantalla
+
+Escenario: Error de carga de hoja de estilos
+
+Dado que el archivo styles.css no puede ser localizado por el servidor
+
+Cuando la página se renderiza
+
+Entonces la estructura HTML mantiene su legibilidad utilizando estilos por defecto
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Diseñar bajo la filosofía Mobile-First.
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Archivos public/index.html y public/styles.css.
+
+US-16: [UI-02] Lógica Asíncrona Fetch API en public/app.js
+Narrativa de Usuario
+
+Como aplicación web de usuario
+
+Quiero realizar peticiones asíncronas en segundo plano desde public/app.js hacia los endpoints REST
+
+Para actualizar los indicadores de potencia y gráficos sin necesidad de recargar la página
+
+Descripción / Contexto
+
+Código cliente en JavaScript (public/app.js) que ejecuta llamadas HTTP vía fetch() a intervalos regulares.
+
+Criterios de Aceptación
+Escenario: Actualización dinámica de datos en pantalla
+
+Dado que la página web está abierta en el navegador del usuario
+
+Cuando el temporizador de JavaScript ejecuta el fetch('/api/mediciones/ultima')
+
+Entonces actualiza el texto del DOM con los nuevos valores de Watts y Amperios
+
+Escenario: Fallo de conexión asíncrona con el backend
+
+Dado que la API REST no responde a las peticiones del frontend
+
+Cuando la promesa del fetch() es rechazada
+
+Entonces el sistema debe mostrar el mensaje de error en la barra de estado: "Desconectado del servidor de telemetría"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Manejar los estados de carga (spinners) para dar retroalimentación al usuario.
+
+Dependencias con otras historias de usuario: US-07, US-10, US-15.
+
+Referencias a documentación externa: Archivo public/app.js.
+
+US-17: [UI-03] Control Remoto Manual de Actuadores desde Interfaz Web
+Narrativa de Usuario
+
+Como usuario con permisos de operación
+
+Quiero interactuar con interruptores visuales en el Dashboard web
+
+Para enviar comandos de apagado o encendido de los relés en tiempo real
+
+Descripción / Contexto
+
+Asociación de eventos click en los botones del DOM que disparan peticiones POST a la API REST.
+
+Criterios de Aceptación
+Escenario: Envío exitoso de comando de conmutación desde la web
+
+Dado que el usuario presiona el botón "Apagar Relé 1" en el Dashboard
+
+Cuando app.js transmite la orden al servidor
+
+Entonces el botón cambia de color y muestra el estado "Desconectado"
+
+Y el relé físico se apaga
+
+Escenario: Confirmación de acción de alto impacto
+
+Dado que el usuario intenta cortar el suministro general
+
+Cuando presiona el botón de apagado global
+
+Entonces la interfaz debe solicitar una confirmación en pantalla antes de enviar la orden
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Deshabilitar el botón temporalmente durante la petición para evitar clics dobles.
+
+Dependencias con otras historias de usuario: US-11, US-16.
+
+Referencias a documentación externa: Código de cliente en public/app.js.
+
+US-18: [UI-04] Instalación PWA y Soporte Offline (manifest.json / sw.js)
+Narrativa de Usuario
+
+Como usuario de dispositivos móviles
+
+Quiero instalar la aplicación web en mi pantalla de inicio y consultar la interfaz en modo fuera de línea
+
+Para utilizar la herramienta con apariencia de aplicación nativa
+
+Descripción / Contexto
+
+Configuración de la PWA utilizando public/manifest.json y el Service Worker public/sw.js.
+
+Criterios de Aceptación
+Escenario: Instalación de PWA en el sistema operativo
+
+Dado que el sitio web cuenta con un manifest.json válido e íconos configurados
+
+Cuando el usuario ingresa desde un navegador compatible
+
+Entonces el sistema operativo muestra el aviso "Agregar a la pantalla principal"
+
+Escenario: Carga de interfaz estática en modo avión
+
+Dado que el Service Worker sw.js ha cacheados los archivos estáticos
+
+Cuando el usuario abre la PWA sin conexión a internet
+
+Entonces la PWA renderiza el shell visual de la aplicación
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Actualizar el número de versión del Service Worker al modificar archivos estáticos.
+
+Dependencias con otras historias de usuario: US-15.
+
+Referencias a documentación externa: Archivos public/manifest.json y public/sw.js.
+
+US-19: [UI-05] Autenticación de Sesión y Vistas Diferenciadas por Rol
+Narrativa de Usuario
+
+Como administrador escolar
+
+Quiero iniciar sesión con credenciales y acceder a vistas de configuración avanzadas
+
+Para restringir el acceso a los comandos de apagado a los usuarios visitantes
+
+Descripción / Contexto
+
+Gestión de sesiones de usuario en PHP y control de visibilidad de componentes en el frontend.
+
+Criterios de Aceptación
+Escenario: Inicio de sesión de usuario administrador
+
+Dado que el usuario ingresa un correo y contraseña válidos en el formulario
+
+Cuando el servidor autentica la cuenta
+
+Entonces habilita la visibilidad de los botones de conmutación de relés
+
+Escenario: Acceso en modo visitante / público
+
+Dado que una persona accede a la aplicación sin iniciar sesión
+
+Cuando se carga la interfaz web
+
+Entonces solo se muestran las gráficas de consumo en modo lectura
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Guardar tokens de sesión seguros con expiración automática.
+
+Dependencias con otras historias de usuario: US-15, US-17.
+
+Referencias a documentación externa: Vistas en src/views/.
+
+🧠 ÉPICA 4: Lógica de Negocio e Inteligencia de Datos (src/services/)
+US-20: [SRV-01] Módulo de Cálculo de Huella de Carbono Equivalent (kg CO 
+2
+​
+ )
+Narrativa de Usuario
+
+Como servicio de lógica ambiental
+
+Quiero procesar la potencia acumulada en src/services/CarbonoService.php
+
+Para convertir los Kilovatios-hora consumidos en kilogramos de CO₂ emitidos
+
+Descripción / Contexto
+
+Servicio especializado src/services/CarbonoService.php que aplica el factor oficial del sistema eléctrico (Factor: 0.325 kg CO 
+2
+​
+ /kWh).
+
+Criterios de Aceptación
+Escenario: Conversión de kWh a emisiones de CO₂
+
+Dado que el consumo acumulado de un periodo es de 10 kWh
+
+Cuando CarbonoService ejecuta el método de cálculo
+
+Entonces retorna un total de 3.25 kg de CO 
+2
+​
+ 
+
+Escenario: Entrada de consumo igual a cero
+
+Dado que no se ha registrado consumo eléctrico (0 kWh)
+
+Cuando el servicio efectúa la operación
+
+Entonces el sistema debe retornar 0.00 kg de CO 
+2
+​
+  sin generar errores de cálculo
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Mapear constantes del factor de emisión en archivos de configuración centralizados.
+
+Dependencias con otras historias de usuario: US-12, US-14.
+
+Referencias a documentación externa: Archivo src/services/CarbonoService.php.
+
+US-21: [SRV-02] Módulo de Conversión Tarifaria a Pesos Argentinos ($ARS)
+Narrativa de Usuario
+
+Como usuario del sistema
+
+Quiero consultar la proyección de costo monetario acumulado en pesos ($ARS)
+
+Para prever el importe de la factura eléctrica según el consumo actual
+
+Descripción / Contexto
+
+Servicio src/services/TarifaService.php que aplica los escalones del cuadro tarifario eléctrico (cargos fijos y variables por kWh).
+
+Criterios de Aceptación
+Escenario: Cálculo de costo estimado en pesos
+
+Dado que se han consumido 150 kWh en la categoría R1
+
+Cuando TarifaService procesa la conversión monetaria
+
+Entonces multiplica los kWh por la tarifa vigente y suma el cargo fijo
+
+Y retorna el monto total estimado en $ARS
+
+Escenario: Ausencia de cuadro tarifario actualizado
+
+Dado que los parámetros de tarifas no están cargados en el sistema
+
+Cuando se solicita la estimación monetaria
+
+Entonces el sistema debe mostrar el mensaje de error: "Cuadro tarifario no configurado"
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Permitir la actualización de los precios del kWh desde la base de datos.
+
+Dependencias con otras historias de usuario: US-12.
+
+Referencias a documentación externa: Módulo de servicios de lógica en src/services/.
+
+US-22: [SRV-03] Detección Automatizada de "Consumo Vampiro"
+Narrativa de Usuario
+
+Como motor de análisis energético
+
+Quiero identificar en src/services/VampiroService.php lecturas ininterrumpidas de bajo consumo (0.5W<P<5W)
+
+Para detectar artefactos dejados en modo de espera (standby)
+
+Descripción / Contexto
+
+Algoritmo de análisis en VampiroService.php que escanea las mediciones nocturnas o fuera de horario escolar.
+
+Criterios de Aceptación
+Escenario: Identificación de carga en standby sostenida
+
+Dado que la potencia se mantiene constante en 3W durante más de 2 horas
+
+Cuando el algoritmo de detección analiza la ventana de tiempo
+
+Entonces marca la bandera de "Consumo Vampiro Detectado"
+
+Y registra la pérdida de energía en el historial
+
+Escenario: Retorno a consumo activo o apagado total
+
+Dado que la potencia supera los 5W o cae a 0W
+
+Cuando el servicio actualiza la evaluación
+
+Entonces desactiva la alerta de consumo vampiro del canal
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Ignorar fluctuaciones breves causadas por ruido eléctrico en el sensor.
+
+Dependencias con otras historias de usuario: US-12, US-20.
+
+Referencias a documentación externa: Archivo src/services/VampiroService.php.
+
+US-23: [SRV-04] Disparo de Alertas y Notificaciones de Derroche
+Narrativa de Usuario
+
+Como usuario del sistema
+
+Quiero recibir advertencias visuales destacadas en el Dashboard
+
+Para tomar acciones inmediatas ante picos anormales de consumo eléctrico
+
+Descripción / Contexto
+
+Generación de banderas de alerta que son leídas por el frontend para cambiar el color de las tarjetas informativas.
+
+Criterios de Aceptación
+Escenario: Superación de límite máximo de potencia
+
+Dado que la potencia medida supera el umbral límite configurado (ej: 3000W)
+
+Cuando el backend procesa la telemetría
+
+Entonces adjunta el estado alerta_sobrecarga: true en la respuesta JSON
+
+Y la web resalta el indicador en color rojo
+
+Escenario: Restablecimiento de potencia a límites normales
+
+Dado que la potencia retorna a rangos seguros
+
+Cuando se envía la nueva lectura
+
+Entonces el indicador de la interfaz vuelve al color verde habitual
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Configurar el umbral de sobrecarga según la capacidad térmica de los conductores del lugar.
+
+Dependencias con otras historias de usuario: US-10, US-16.
+
+Referencias a documentación externa: Lógica de notificación en src/services/.
+
+US-24: [SRV-05] Orquestación de Lógica en LecturaService.php y ReleService.php
+Narrativa de Usuario
+
+Como capa de servicio backend
+
+Quiero orquestar el flujo de datos entre los controladores, la lógica de cálculo y los repositorios
+
+Para asegurar el cumplimiento de las reglas de negocio de forma centralizada
+
+Descripción / Contexto
+
+Clases src/services/LecturaService.php y src/services/ReleService.php actuando como intermediarios entre controladores y la persistencia.
+
+Criterios de Aceptación
+Escenario: Orquestación de guardado de telemetría completa
+
+Dado que LecturaService recibe un objeto Lectura validado
+
+Cuando invoca las funciones de cálculo de carbono y verificación de vampiro
+
+Entonces llama a LecturaRepository para persistir la entidad completa
+
+Escenario: Fallo en una de las etapas de orquestación
+
+Dado que el repositorio falla al guardar en MySQL
+
+Cuando el servicio detecta la falla
+
+Entonces deshace la transacción y notifica al controlador la falla interna
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Garantizar el aislamiento de responsabilidades desacoplando la lógica de los controladores Slim.
+
+Dependencias con otras historias de usuario: US-10, US-12, US-20.
+
+Referencias a documentación externa: Archivos en src/services/.
+
+📊 ÉPICA 5: Auditoría, Integraciones & DevOps (src/integrations/, .github/)
+US-25: [INT-01] Respaldo y Duplicado de Auditoría en Google Sheets
+Narrativa de Usuario
+
+Como auditor del proyecto
+
+Quiero que cada bloque de telemetría se retransmita a una hoja de Google Sheets vía GoogleSheetsClient.php
+
+Para disponer de un registro histórico secundario e inmutable de auditoría
+
+Descripción / Contexto
+
+Cliente de integración src/integrations/GoogleSheetsClient.php que efectúa un envío cURL contra una Webhook de Google Apps Script.
+
+Criterios de Aceptación
+Escenario: Duplicación exitosa de lectura en Google Sheets
+
+Dado que la lectura se guardó correctamente en MySQL
+
+Cuando GoogleSheetsClient envía los datos en segundo plano a la URL de Google Apps Script
+
+Entonces la hoja de cálculo añade una fila con la fecha, hora, lectura y aula correspondiente
+
+Escenario: Timeout en la conexión con los servidores de Google
+
+Dado que el servicio de Google Sheets demora más de 3 segundos en responder
+
+Cuando transcurre el tiempo límite
+
+Entonces el sistema cancela la petición cURL y registra la falta de respaldo en el log sin detener el backend
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Realizar el envío de forma asíncrona para no penalizar el tiempo de respuesta del backend.
+
+Dependencias con otras historias de usuario: US-10, US-12.
+
+Referencias a documentación externa: Archivo src/integrations/GoogleSheetsClient.php y public/scripts/google_script.js.
+
+US-26: [INT-02] Generación de Endpoint Público y Renderizado de Código QR
+Narrativa de Usuario
+
+Como visitante del laboratorio o evaluación
+
+Quiero escanear un código QR impreso en el gabinete del equipo
+
+Para acceder de forma inmediata al panel público de auditoría de consumo
+
+Descripción / Contexto
+
+Generación de un código QR apuntando a la URL pública del Dashboard y habilitación de la vista de lectura sin login.
+
+Criterios de Aceptación
+Escenario: Acceso mediante escaneo de código QR
+
+Dado que un evaluador escanea el código QR con la cámara de su celular
+
+Cuando el navegador abre la URL pública codificada
+
+Entonces el sistema renderiza la versión simplificada del Dashboard con el consumo instantáneo
+
+Escenario: Redirección por cambio de dominio de alojamiento
+
+Dado que se actualiza la URL base de la aplicación web
+
+Cuando se consulta el endpoint de generación de QR
+
+Entonces el sistema actualiza el vector gráfico QR con el nuevo enlace
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: El código QR debe mantenerse legible en impresiones de 3×3 cm.
+
+Dependencias con otras historias de usuario: US-15, US-19.
+
+Referencias a documentación externa: Enlace público del servidor en InfinityFree / Hosting.
+
+US-27: [DEV-01] Despliegue Continuo (CI/CD) con GitHub Actions (deploy.yml)
+Narrativa de Usuario
+
+Como equipo de desarrollo de software
+
+Quiero ejecutar un flujo automatizado de despliegue en .github/workflows/deploy.yml al hacer merge en main
+
+Para actualizar el servidor web sin necesidad de subir archivos por FTP manualmente
+
+Descripción / Contexto
+
+Configuración del pipeline de CI/CD en .github/workflows/deploy.yml para la transferencia de archivos al hosting.
+
+Criterios de Aceptación
+Escenario: Ejecución de pipeline de despliegue automático
+
+Dado que un desarrollador aprueba un Pull Request hacia la rama main
+
+Cuando GitHub Actions detecta el evento push
+
+Entonces ejecuta el flujo deploy.yml subiendo los cambios al servidor web
+
+Y notifica el estado exitoso en el repositorio
+
+Escenario: Fallo de autenticación en credenciales FTP/SSH
+
+Dado que el secreto del servidor en GitHub es incorrecto
+
+Cuando el workflow intenta conectar con el host
+
+Entonces el pipeline cancela el proceso y marca la tarea en rojo dentro del repositorio
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Excluir las carpetas .git, tests/ y archivos .env de la transferencia.
+
+Dependencias con otras historias de usuario: Ninguna.
+
+Referencias a documentación externa: Archivo .github/workflows/deploy.yml.
+
+🎨 ÉPICA 6: Diseño Mecánico, Impresión 3D & Relevamiento Institucional
+US-28: [3D-01] Modelado CAD de Gabinete Estanco para Protección Eléctrica 220V
+Narrativa de Usuario
+
+Como proyectista de hardware y diseño 3D
+
+Quiero diseñar un gabinete modular estanco mediante software CAD
+
+Para alojar la placa ESP32, el módulo PZEM-004T y los relés aislando las conexiones expuestas de 220V
+
+Descripción / Contexto
+
+Creación del modelo tridimensional en formato STL/STEP con fijaciones internas, ventilación por convección y calces para bornes.
+
+Criterios de Aceptación
+Escenario: Ensamble y calce correcto de componentes internos
+
+Dado que las tolerancias del modelo CAD consideran un margen de 0.4 mm
+
+Cuando se ubican las placas electrónicas dentro de los soportes
+
+Entonces la placa ESP32 y el sensor PZEM se fijan sin requerir adhesivos externos
+
+Escenario: Verificación de aislamiento de seguridad de bornes
+
+Dado que las bornes de 220V AC están conectadas
+
+Cuando se cierra la tapa superior del gabinete
+
+Entonces ningún elemento conductor de alta tensión queda al alcance al contacto manual
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Respetar las dimensiones máximas de la cama de impresión (200×200 mm).
+
+Dependencias con otras historias de usuario: US-01, US-02.
+
+Referencias a documentación externa: Archivos de diseño en docs/.
+
+US-29: [3D-02] Generación de GCODE y Parámetros de Slicing para Impresión FDM
+Narrativa de Usuario
+
+Como técnico de fabricación digital
+
+Quiero procesar el archivo STL en el programa de laminado (Slicer)
+
+Para generar el archivo GCODE optimizando el tiempo de impresión y la resistencia mecánica del gabinete
+
+Descripción / Contexto
+
+Configuración de parámetros de impresión: relleno (infill) al 20%, altura de capa 0.2 mm, temperatura de extrusor a 210°C para filamento PLA.
+
+Criterios de Aceptación
+Escenario: Generación válida de archivo de impresión GCODE
+
+Dado que se ingresa el STL del gabinete al software de laminado
+
+Cuando se aplica el perfil de impresión optimizado para PLA
+
+Entonces se exporta el archivo GCODE especificando el tiempo estimado de impresión y consumo de filamento en gramos
+
+Escenario: Colapso por falta de soportes en geometrías voladizas
+
+Dado que el modelo presenta voladizos con ángulos superiores a 45°
+
+Cuando se simula el laminado
+
+Entonces el operador debe activar los soportes tipo "Árbol" antes de exportar el GCODE
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: Verificar que la velocidad de impresión no supere los 50 mm/s para mantener la precisión geométrica.
+
+Dependencias con otras historias de usuario: US-28.
+
+Referencias a documentación externa: Archivos del repositorio en docs/.
+
+US-30: [3D-03] Pausa Programada (M600) para Rotulado y Etiquetado Bicolor
+Narrativa de Usuario
+
+Como diseñador de producto
+
+Quiero insertar el comando GCODE M600 en la capa de relieve del isotipo "Voltec Ergon"
+
+Para cambiar manualmente el filamento e imprimir el texto e íconos en un color contrastante
+
+Descripción / Contexto
+
+Uso del cambio de filamento por capas para resaltar en color blanco el texto y advertencias sobre la base de color negro.
+
+Criterios de Aceptación
+Escenario: Pausa programada e intercambio de filamento exitoso
+
+Dado que la impresora 3D llega a la capa de relieve (ej: capa 15)
+
+Cuando el controlador lee el comando M600
+
+Entonces la máquina retrae el filamento, retira el cabezal del área de trabajo y emite una señal sonora de espera
+
+Y reanuda la impresión en el color secundario al confirmar la carga
+
+Escenario: Purgado insuficiente del nuevo color
+
+Dado que se cambia de filamento de color negro a blanco
+
+Cuando la máquina reanuda la impresión sin la purga adecuada
+
+Entonces se debe extruir filamento de forma manual hasta obtener un flujo de color puro antes de continuar
+
+Comentarios Adicionales
+Notas sobre limitaciones técnicas: La impresora 3D debe contar con el parámetro de pausa M600 habilitado en su firmware Marlin.
+
+Dependencias con otras historias de usuario: US-29.
+
+Referencias a documentación externa: Documentación y manuales del proyecto en docs/.
